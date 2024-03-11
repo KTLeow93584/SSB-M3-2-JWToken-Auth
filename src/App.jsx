@@ -1,7 +1,6 @@
 import { Provider } from 'react-redux';
 import { PersistGate } from 'redux-persist/integration/react'
 import { BrowserRouter, Outlet, Route, Routes } from 'react-router-dom';
-import useLocalStorage from 'use-local-storage';
 
 import Container from 'react-bootstrap/Container';
 
