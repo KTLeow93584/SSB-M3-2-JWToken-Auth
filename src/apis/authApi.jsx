@@ -1,10 +1,18 @@
 // ====================================================================
 const url = "https://7afcf51d-12b6-46b9-b582-68912b50ff6c-00-2cmx7cuplqvx6.spock.replit.dev/";
 // ====================================================================
-const jsonHeaderTypeA = {
-    "Content-Type": "application/json",
-    // 'Content-Type': 'application/x-www-form-urlencoded',
-};
+let sessionToken = null;
+
+export function setSessionToken(token) {
+    localStorage.setItem("JWToken", JSON.stringify({ token: token }));
+    sessionToken = token;
+
+    return token;
+}
+
+export function getSessionToken() {
+    return JSON.parse(localStorage.getItem("JWToken", { token: null }));
+}
 // ====================================================================
 /**
  * @param string        subURL                     The API's name. (E.g. login, logout, register).
@@ -13,33 +21,64 @@ const jsonHeaderTypeA = {
  * @param function      onSuccessfulCallback       Callback when API succeeded.
  * @param function      onFailedCallback           Callback when API failed.
  */
-export default async function callServerAPI(
-    subURL, method, header, body,
+export async function callServerAPI(subURL, method = "GET", body = {},
     onSuccessfulCallback = null, onFailedCallback = null) {
-    const response = await fetch(url + subURL, {
-        method: method,
+    const fullURL = url + subURL;
 
-        // *default, no-cache, reload, force-cache, only-if-cached
-        cache: "no-cache",
+    // Debug
+    //console.log("URL:", fullURL);
 
-        // no-cors, *cors, same-origin
-        mode: "cors",
+    try {
+        const response = await fetch(fullURL, {
+            method: method,
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "*/*",
+                "User-Agent": "React.js Web",
+                "Authorization": sessionToken ? ("Bearer " + sessionToken) : null
+            },
 
-        credentials: "same-origin",
-        headers: header,
+            // "body" data type must match "Content-Type" heade
+            body: method === "GET" ? null : JSON.stringify(body)
 
-        // manual, follow, error
-        redirect: "follow",
+            // *default, no-cache, reload, force-cache, only-if-cached
+            //cache: "no-cache",
 
-        // no-referrer, *no-referrer-when-downgrade, origin, origin-when-cross-origin, same-origin, strict-origin, strict-origin-when-cross-origin, unsafe-url
-        referrerPolicy: "no-referrer",
+            // no-cors, *cors, same-origin
+            //mode: "cors",
 
-        // "body" data type must match "Content-Type" heade
-        body: body
-    });
+            // manual, follow, error
+            //redirect: "follow",
 
-    return response;
+            //credentials: "include",
+
+            // no-referrer, *no-referrer-when-downgrade, origin, origin-when-cross-origin, same-origin, strict-origin, strict-origin-when-cross-origin, unsafe-url
+            //referrerPolicy: "no-referrer",
+        });
+
+        const result = await response.json();
+
+        // Debug
+        console.log("Result.", result);
+
+        if (result.success || result.success === "true") {
+            if (onSuccessfulCallback)
+                onSuccessfulCallback(result);
+        }
+        else {
+            if (onFailedCallback)
+                onFailedCallback(result && result.error ? result.error : null);
+        }
+    }
+    catch (error) {
+        // Debug
+        // console.log("[On API] Yielded an error.", error);
+
+        if (onFailedCallback)
+            onFailedCallback(error);
+    }
+
 }
 
-export { jsonHeaderTypeA };
+export { sessionToken };
 // ====================================================================

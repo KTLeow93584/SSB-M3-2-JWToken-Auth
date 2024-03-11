@@ -11,6 +11,7 @@ import Navbar from 'react-bootstrap/Navbar';
 import Offcanvas from 'react-bootstrap/Offcanvas';
 
 import { logout } from '../feature/activeUser/activeUserSlice.jsx';
+import { callServerAPI, setSessionToken } from '../apis/authApi.jsx';
 // ==============================================
 export default function NavigationPanel() {
     // ===========================
@@ -19,6 +20,7 @@ export default function NavigationPanel() {
 
     const onLogout = () => {
         dispatch(logout());
+        setSessionToken(null);
         navigate('/');
     };
     // ===========================

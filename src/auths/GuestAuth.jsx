@@ -11,7 +11,7 @@ export default function RequireAuth({ children }) {
     //console.log("[Page Authentication - Only Accessible to Guests] User Profile.", user);
 
     if (user !== null && user !== undefined && token !== null && token !== undefined)
-        return <Navigate to="/" replace />;
+        return <Navigate to="/dashboard" replace />;
 
     return children;
 }

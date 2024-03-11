@@ -8,10 +8,11 @@ export default function RequireAuth({ children }) {
     const token = userObj.token;
 
     // Debug
-    //console.log("[Page Authentication - User Required] User Profile.", userObj);
+    console.log("[Page Authentication - User Required] User Profile.", userObj);
 
     if (!user || !token)
         return <Navigate to="/login" replace />;
 
+    console.log("Pass");
     return children;
 }

@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
 import { useDispatch } from 'react-redux';
-import { useNavigate } from 'react-router-dom';
 
 import Container from 'react-bootstrap/Container';
 import Row from 'react-bootstrap/Row';
@@ -11,11 +10,11 @@ import Card from 'react-bootstrap/Card';
 import Form from 'react-bootstrap/Form';
 
 import { login } from '../feature/activeUser/activeUserSlice.jsx';
+import { callServerAPI, setSessionToken } from '../apis/authApi.jsx';
 // ==============================================
 export default function Login() {
     // ===========================
     const dispatch = useDispatch();
-    const navigate = useNavigate();
     // ===========================
     const [username, setUsername] = useState("");
     const [password, setPassword] = useState("");
@@ -34,57 +33,63 @@ export default function Login() {
     // ===========================
     const onLogin = (username, password, onProcessSuccessfulCallback = null, onProcessFailedCallback = null) => {
         // =======================
-        let loggedInUserObj = {
-            user: null,
-            lastLogActivity: null,
-            token: null
-        };
-        /*
-        const userIndex = cachedUsers.findIndex((user) => user.email.toLowerCase() === email.toLowerCase() && user.password === password);
-        if (userIndex !== -1) {
-            const user = cachedUsers[userIndex];
-            const date = new Date();
-
-            loggedInUserObj = {
-                user: { email: user.email, firstName: user.firstName, lastName: user.lastName, image: user.image, tasks: user.tasks },
-                lastLogActivity: date.toISOString(),
-                token: date.toISOString()
-            };
-        }
-        */
-        // =======================
-        dispatch(login(loggedInUserObj));
-        // =======================
-        // Debug
-        //console.log("On Successfully Logged In", loggedInUserObj);
-        // =======================
-        if (onProcessSuccessfulCallback)
-            onProcessSuccessfulCallback(loggedInUserObj);
-
-        // On Successful Login Process
-        if (loggedInUserObj.user !== null) {
-            if (onProcessSuccessfulCallback)
-                onProcessSuccessfulCallback(loggedInUserObj);
-            navigate("/");
-        }
-        // On Failed Login Process
-        else {
-            if (onProcessFailedCallback)
-                onProcessFailedCallback(true);
-        }
+        callServerAPI("login", "POST",
+            // JSON Body
+            { username: username, password: password },
+            // On Successful Callback
+            (result) => {
+                // Debug
+                //console.log("On Successfully Logged In", result);
+                // =======================
+                if (onProcessSuccessfulCallback)
+                    onProcessSuccessfulCallback(result.token);
+                // =======================
+            },
+            // On Failed Callback
+            onProcessFailedCallback);
         // =======================
     };
     // ===========================
     return (
         <Container fluid>
             <Row>
-                <Col className="col-12"
-                    style={{ borderTopLeftRadius: "5px", borderBottomLeftRadius: "5px", borderRightWidth: "0px" }}>
+                <Col className="col-12" style={{ borderTopLeftRadius: "5px", borderBottomLeftRadius: "5px", borderRightWidth: "0px" }}>
                     <Form className="mt-4 mb-2" onSubmit={(event) => {
                         event.preventDefault();
 
-                        if (onLogin)
-                            onLogin(username, password, null, (state) => setInvalidUser(state));
+                        onLogin(username, password,
+                            (token) => {
+                                setSessionToken(token);
+
+                                callServerAPI("profile", "GET",
+                                    // JSON Body
+                                    null,
+                                    // On Successful Callback
+                                    (result) => {
+                                        // Debug
+                                        //console.log("On Successfully GET Profile Page, API", result);
+
+                                        let loggedInUserObj = {
+                                            user: { firstName: result.data.firstName, lastName: result.data.lastName },
+                                            token: token
+                                        };
+
+                                        // Debug
+                                        //console.log("On Successfully GET Profile Page, User Obj", loggedInUserObj);
+                                        // =======================
+                                        dispatch(login(loggedInUserObj));
+                                        // =======================
+                                    },
+                                    // On Failed Callback
+                                    null);
+                                // =======================
+                            }, (error) => {
+                                // Debug
+                                //console.log("Login Failed. Error:", error);
+
+                                setInvalidUser(true);
+                            }
+                        );
                     }}>
                         <Card.Body className="mt-5">
                             {/* ----------------------------- */}
@@ -120,15 +125,15 @@ export default function Login() {
                             </Form.Group>
                             {/* ----------------------------- */}
                             {/* Submit */}
-                            <div className="mt-4 d-flex justify-content-center">
-                                <Button type="submit" className="button-primary mb-1" style={{ width: "30%" }}>Login</Button>
+                            <div className="mt-4 d-flex flex-column align-items-center">
+                                <Button type="submit" className="button-primary mb-2" style={{ width: "30%" }}>Login</Button>
+                                {
+                                    invalidUser ?
+                                        (<Form.Text className="text-danger fs-6">Invalid Username/Password Combination</Form.Text>) :
+                                        null
+                                }
                             </div>
                             {/* ----------------------------- */}
-                            {
-                                invalidUser ?
-                                    (<Form.Text className="text-danger">Invalid Username/Password Combination</Form.Text>) :
-                                    null
-                            }
                         </Card.Body>
                     </Form>
                 </Col>

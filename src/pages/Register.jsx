@@ -1,7 +1,6 @@
 // ==============================================
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import useLocalStorage from 'use-local-storage';
 
 import Container from 'react-bootstrap/Container';
 import Row from 'react-bootstrap/Row';
@@ -10,6 +9,8 @@ import Col from 'react-bootstrap/Col';
 import Button from 'react-bootstrap/Button';
 import Card from 'react-bootstrap/Card';
 import Form from 'react-bootstrap/Form';
+
+import { callServerAPI } from '../apis/authApi.jsx';
 // ==============================================
 export default function Register() {
     // =======================
@@ -19,21 +20,27 @@ export default function Register() {
         // Debug
         //console.log("[Registration] Payload.", action.payload);
 
-        const newUser = {
-            username: username,
-            password: password,
-            firstName: firstName,
-            lastName: lastName,
-            tasks: []
-        };
+        callServerAPI("signup", "POST",
+            // Body
+            {
+                username: username,
+                password: password,
+                firstName: firstName,
+                lastName: lastName
+            },
+            // On Successful Callback
+            (result) => {
+                // Debug
+               // console.log("On Successful Registration.", result);
 
-        // Debug
-        //console.log("[On Register] New User.", newUser);
-
-        //const newUsersBatch = [...cachedUsers, newUser];
-        //localStorage.setItem("users", JSON.stringify(newUsersBatch));
-
-        //navigate("/login");
+                navigate("/login");
+            },
+            // On Failed Callback
+            (error) => {
+                // Debug
+                //console.log("On Failed Registration.", error);
+            }
+        );
     };
     // =======================
     const [username, setUsername] = useState("");
@@ -45,8 +52,6 @@ export default function Register() {
 
     const [doesPasswordMatch, setDoesPasswordMatch] = useState(true);
     const [doesUserExist, setDoesUserExist] = useState(false);
-
-    const [isCorrectPasswordFormat, setIsCorrectPasswordFormat] = useState(true);
 
     const [firstName, setFirstName] = useState("");
     const [lastName, setLastName] = useState("");
@@ -73,21 +78,6 @@ export default function Register() {
         return match;
     }
 
-    function doPasswordsMeetCriteria() {
-        const regexUpperLetters = /[A-z]/;
-        const regexLowerLetters = /[a-z]/;
-        const regexNumbers = /[0-9]/;
-        const regexSymbols = /[^a-zA-z0-9]/;
-
-        const pass = password.length >= 8 & regexUpperLetters.test(password) &
-            regexLowerLetters.test(password) & regexNumbers.test(password) &
-            regexSymbols.test(password);
-
-        setIsCorrectPasswordFormat(pass);
-
-        return pass;
-    }
-
     return (
         <Container fluid>
             <Row>
@@ -96,7 +86,7 @@ export default function Register() {
                     <Form className="m-0 p-0" onSubmit={(event) => {
                         event.preventDefault();
 
-                        if (!doPasswordsMatch() || !doPasswordsMeetCriteria())
+                        if (!doPasswordsMatch())
                             return;
 
                         onRegister(username, password, firstName, lastName);
@@ -170,19 +160,6 @@ export default function Register() {
                                         (<Form.Label className="text-danger ms-1 mb-3">Both the Password and Password Confirmation fields do not match</Form.Label>) :
                                         null
                                 }
-
-                                {/* Password Format */}
-                                {
-                                    (!isCorrectPasswordFormat) ?
-                                        (<Form.Label className="text-danger ms-1 mb-3">{`The current password does not meet the criteria.`}</Form.Label>) :
-                                        null
-                                }
-                                {/* ----------------------------- */}
-                                <div className="d-flex flex-column secondary-container primary-border rounded mb-2 px-2 py-1">
-                                    <Form.Text className="text-dark login-text fw-bold">Requirements for password: </Form.Text>
-                                    <Form.Text className="text-dark login-text">1. 8 characters long. </Form.Text>
-                                    <Form.Text className="text-dark login-text">2. Must contain 1 symbol, 1 number, 1 lower and 1 uppercase letter. </Form.Text>
-                                </div>
                                 {/* ----------------------------- */}
                                 <hr className="horizontal-line-text" />
                                 {/* ----------------------------- */}
